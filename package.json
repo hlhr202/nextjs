@@ -1,16 +1,21 @@
 {
   "scripts": {
-    "build": "next build",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "npm run type-check -- --watch",
+    "build": "npm run type-check && next build",
     "dev": "next",
-    "now-build": "next build"
+    "now-build": "npm run type-check && next build"
   },
   "dependencies": {
     "@types/next": "8.0.5",
+    "@types/node": "^12.0.5",
     "@types/react": "16.8.19",
     "@types/react-dom": "16.8.4",
+    "@zeit/next-typescript": "^1.1.1",
     "next": "^8.0.0",
     "react": "16.8.6",
     "react-dom": "16.8.6",
+    "tslib": "^1.9.3",
     "typescript": "3.5.1"
   }
 }
