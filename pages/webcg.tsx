@@ -3,7 +3,7 @@ import Header from "../components/header";
 import { NextSFC } from "next";
 import dynamic from "next/dynamic";
 
-const DynamicImport = dynamic(import("../components/dynamic"));
+const DynamicWebCG = dynamic(import("../components/webcg-dynamic"));
 
 const AboutPage: NextSFC<{ isServer: boolean }> = props => {
     return (
@@ -18,7 +18,7 @@ const AboutPage: NextSFC<{ isServer: boolean }> = props => {
                 <Link href="/">
                     <a>Go to Home</a>
                 </Link>
-                <DynamicImport />
+                <DynamicWebCG />
             </section>
         </main>
     );

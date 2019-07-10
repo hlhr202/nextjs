@@ -6,8 +6,12 @@ function Index() {
         <main>
             <Header />
             <section>
-                <Link href="/about">
-                    <a>Go to About Me</a>
+                <Link href="/webcg">
+                    <a>CG show case</a>
+                </Link>
+                <br />
+                <Link href="/webaudio">
+                    <a>Audio show case</a>
                 </Link>
             </section>
         </main>
