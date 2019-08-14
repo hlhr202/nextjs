@@ -13,6 +13,10 @@ function Index() {
                 <Link href="/webaudio">
                     <a>Audio show case</a>
                 </Link>
+                <br />
+                <Link href="/webaudio2">
+                    <a>Audio Test 2</a>
+                </Link>
             </section>
         </main>
     );

@@ -1,34 +1,55 @@
 import React from "react";
 import { AudioContextContainer } from "./AudioContextProvider";
 
-export const useTimeDomainAnalyser = () => {
-    const audioCtx = React.useContext(AudioContextContainer);
-    const canvasRef = React.createRef<HTMLCanvasElement>();
-    const analyser = React.useMemo(() => audioCtx.createAnalyser(), [audioCtx]);
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = React.useMemo(() => new Uint8Array(bufferLength), [bufferLength]);
-    const draw = React.useCallback(() => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-            requestAnimationFrame(draw);
-            const canvasCtx = canvas.getContext("2d")!;
+class AnalyserContainer {
+    private _rendering = false;
+    private bufferLength?: number;
+    private dataArray?: Uint8Array;
+    private animation?: number;
+    private canvas?: HTMLCanvasElement;
+    private analyser?: AnalyserNode;
 
-            analyser.getByteTimeDomainData(dataArray);
+    get rendering() {
+        return this._rendering;
+    }
 
-            canvasCtx.fillStyle = "rgb(200, 200, 200)";
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    setRendering = (value: boolean) => {
+        this._rendering = value;
+        if (!this._rendering && this.bufferLength) {
+            this.dataArray = new Uint8Array(this.bufferLength);
+        }
+    };
 
-            canvasCtx.lineWidth = 2;
-            canvasCtx.strokeStyle = "rgb(0, 0, 0)";
+    public init = ({ canvas, analyser }: { canvas: HTMLCanvasElement; analyser: AnalyserNode }) => {
+        this.canvas = canvas;
+        this.analyser = analyser;
+        this.bufferLength = this.analyser.frequencyBinCount;
+        this.dataArray = new Uint8Array(this.bufferLength);
+    };
+
+    public draw = () => {
+        if (this.analyser && this.canvas && this.dataArray && this.bufferLength) {
+            this.animation = requestAnimationFrame(this.draw);
+            const canvasCtx = this.canvas.getContext("2d")!;
+
+            if (this._rendering) {
+                this.analyser.getByteTimeDomainData(this.dataArray);
+            }
+
+            canvasCtx.fillStyle = "rgb(50, 50, 50)";
+            canvasCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            canvasCtx.lineWidth = 1;
+            canvasCtx.strokeStyle = "rgb(250, 250, 250)";
 
             canvasCtx.beginPath();
 
-            var sliceWidth = (canvas.width * 1.0) / bufferLength;
-            var x = 0;
+            let x = 0;
+            const sliceWidth = (this.canvas.width * 1.0) / this.bufferLength;
 
-            for (var i = 0; i < bufferLength; i++) {
-                var v = dataArray[i] / 128.0;
-                var y = (v * canvas.height) / 2;
+            for (let i = 0; i < this.bufferLength; i++) {
+                const v = this.dataArray[i] / 128.0;
+                const y = (v * this.canvas.height) / 2;
 
                 if (i === 0) {
                     canvasCtx.moveTo(x, y);
@@ -39,15 +60,34 @@ export const useTimeDomainAnalyser = () => {
                 x += sliceWidth;
             }
 
-            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.lineTo(this.canvas.width, this.canvas.height / 2);
             canvasCtx.stroke();
         }
-    }, [canvasRef]);
-    const AnalyserCanvas = React.memo(() => <canvas ref={canvasRef} />);
+    };
+
+    public dispose = () => {
+        if (this.animation !== undefined) cancelAnimationFrame(this.animation);
+    };
+}
+
+export const useTimeDomainAnalyser = () => {
+    const audioCtx = React.useContext(AudioContextContainer);
+    const canvasRef = React.createRef<HTMLCanvasElement>();
+    const analyser = React.useMemo(() => audioCtx.createAnalyser(), []);
+    const analyserContainer = React.useMemo(() => new AnalyserContainer(), []);
+    const startAnalyser = React.useCallback(() => analyserContainer.setRendering(true), []);
+    const stopAnalyser = React.useCallback(() => analyserContainer.setRendering(false), []);
+    const AnalyserRenderer = React.memo(() => <canvas ref={canvasRef} />);
+
     React.useEffect(() => {
         if (canvasRef.current) {
-            draw();
+            analyserContainer.init({ canvas: canvasRef.current, analyser });
+            analyserContainer.draw();
         }
-    }, [canvasRef.current]);
-    return React.useMemo(() => ({ AnalyserCanvas, analyser }), []);
+        return () => {
+            analyserContainer.dispose();
+        };
+    }, []);
+
+    return React.useMemo(() => ({ AnalyserRenderer, analyser, startAnalyser, stopAnalyser }), []);
 };
